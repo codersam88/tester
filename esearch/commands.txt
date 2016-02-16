@@ -1,0 +1,196 @@
+# delete the current index
+DELETE csv
+
+#create index
+PUT /csv
+
+#setting properties
+PUT /csv/_mapping/damballa
+{
+  "properties": 
+  {
+    "K": 
+    {
+      "type": "string",
+      "index": "not_analyzed"
+    }
+  }
+}
+
+#checking the mapping
+GET /csv/
+
+GET /csv/damballa/_search
+
+# finding total number of quarters
+GET csv/damballa/_search?search_type=count
+{
+  "aggs": {
+    "distinct_quarters": {
+      "terms": {
+        "field": "Q"
+      }
+    }
+  }
+} 
+
+# finding fields in specific quarter
+GET csv/damballa/_search
+{
+  "query": {
+    "filtered": {
+      "filter": {
+        "term": {
+          "Q": "2016q1"
+        }
+      }
+    }
+  }
+}
+
+# List all opportunities for a specific node in the hierarchy.
+GET csv/damballa/_search
+{
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "bool": 
+        {
+          "must": 
+          [
+            {
+              "term": 
+              {
+                "Q": "2016q1"
+              }
+            },
+            {
+              "term":
+              {
+                "K":"CustomType~Region~::~New~East"
+              }
+            }
+          ]
+        } 
+      }
+    }
+  }
+}
+
+# Deals matching category=Commit
+GET csv/damballa/_search
+{
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "bool": 
+        {
+          "must": 
+          [
+            {
+              "term": 
+              {
+                "Q": "2016q1"
+              }
+            },
+            {
+              "term":
+              {
+                "K":"CustomType~Region~::~New~East"
+              }
+            },
+            {
+              "term":
+              {
+                "dynamic_fields.CustomForecastCategory":"commit"
+              }
+            }
+          ]
+        } 
+      }
+    }
+  }
+}
+
+# Deals matching category not equal to Pipeline and Closed.
+GET csv/damballa/_search
+{
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "bool": 
+        {
+          "must": 
+          [
+            {
+              "term": 
+              {
+                "Q": "2016q1"
+              }
+            },
+            {
+              "term":
+              {
+                "K":"CustomType~Region~::~New~East"
+              }
+            }
+          ],
+          "must_not":
+          [
+            {
+              "term":
+              {
+                "dynamic_fields.CustomForecastCategory":"pipeline"
+              }
+            },
+            {
+              "term":
+              {
+                "dynamic_fields.CustomForecastCategory":"closed"
+              }
+            }
+          ]
+        } 
+      }
+    }
+  }
+}
+DELETE /csv
+
+PUT /csv
+{
+  "properties": {
+    "k": {
+      "type": "string",
+      "index": "not_analyzed"
+    }
+  }
+}
+
+GET csv/damballa/_search
+{
+  "query": {
+    "filtered": {
+      "filter": {
+        "bool":{
+          "must":[
+            {
+              "term": {
+                "K"
+              }
+            }
+            ]
+        }
+      }
+    }
+  }
+}
