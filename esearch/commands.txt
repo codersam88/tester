@@ -1,4 +1,5 @@
 # delete the current index
+# veryyyyy dangerous
 DELETE csv
 
 #create index
@@ -13,6 +14,17 @@ PUT /csv/_mapping/damballa
     {
       "type": "string",
       "index": "not_analyzed"
+    },
+    "dynamic_fields":
+    {
+      "properties": 
+      { 
+        "Stage": 
+        {
+          "type": "string",
+          "index": "not_analyzed"
+        }
+      }
     }
   }
 }
@@ -20,9 +32,10 @@ PUT /csv/_mapping/damballa
 #checking the mapping
 GET /csv/
 
+#looking at all the documents
 GET /csv/damballa/_search
 
-# finding total number of quarters
+# finding different quarters
 GET csv/damballa/_search?search_type=count
 {
   "aggs": {
@@ -164,33 +177,223 @@ GET csv/damballa/_search
     }
   }
 }
-DELETE /csv
 
-PUT /csv
+# finding different number of stages
+GET csv/damballa/_search?search_type=count
 {
-  "properties": {
-    "k": {
-      "type": "string",
-      "index": "not_analyzed"
+  "aggs": {
+    "distinct_stages": {
+      "terms": {
+        "field": "dynamic_fields.Stage"
+      }
     }
   }
-}
+} 
 
+# Deals matching stage = ‘5 - Negotiation’ or ‘6 - Contract Signing’
+#Run with shoulf filter
 GET csv/damballa/_search
 {
-  "query": {
-    "filtered": {
-      "filter": {
-        "bool":{
-          "must":[
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "bool": 
+        {
+          "should": 
+          [
             {
-              "term": {
-                "K"
+              "term": 
+              {
+                "dynamic_fields.Stage": "Stage 5 - Purchasing"
+              }
+            },
+            {
+              "term":
+              {
+                "dynamic_fields.Stage": "Stage 6 - Closed: Win"
               }
             }
-            ]
-        }
+          ]
+        } 
       }
     }
   }
 }
+
+# Deals matching stage = ‘5 - Negotiation’ or ‘6 - Contract Signing’
+#Run with shoulf filter
+GET csv/damballa/_search
+{
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "bool": 
+        {
+          "must": 
+          [
+            {
+              "terms": 
+              {
+                "dynamic_fields.Stage": 
+                [
+                  "Stage 5 - Purchasing", "Stage 6 - Closed: Win"
+                  ]
+              }
+            }
+          ]
+        } 
+      }
+    }
+  }
+}
+
+
+# Deals where amount > $1M and < 4M
+GET csv/damballa/_search
+{
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "range": 
+        {
+          "dynamic_fields.BillableAmount": 
+          {
+            "gt": 200000,
+            "lt": 500000
+          }
+        } 
+      }
+    }
+  }
+}
+
+#Deals where amount > $1M and < 4M
+GET csv/damballa/_search
+{
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "bool": 
+        {
+          "must": 
+          [
+            {
+              "term": 
+              {
+                "Q": "2016q1"
+              }
+            },
+            {
+              "range": 
+              {
+                "dynamic_fields.BillableAmount": 
+                  {
+                    "gt": 0,
+                    "lt": 500000
+                  }
+              }
+            }
+          ]
+        } 
+      }
+    }
+  }
+}
+
+
+# Deals with close date between 2016-01-01 and 2016-01-31.
+GET csv/damballa/_search
+{
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "bool": 
+        {
+          "must": 
+          [
+            {
+              "term": 
+              {
+                "Q": "2016q1"
+              }
+            },
+            {
+              "range": 
+              {
+                "dynamic_fields.CloseDate": 
+                  {
+                    "gt": 43330,
+                    "lt": 44000
+                  }
+              }
+            }
+          ]
+        } 
+      }
+    }
+  }
+}
+
+# Deals with close date between 2016-01-01 and 2016-01-31.
+GET csv/damballa/_search
+{
+  "query": 
+  {
+    "filtered": 
+    {
+      "filter": 
+      {
+        "bool": 
+        {
+          "must": 
+          [
+            {
+              "term": 
+              {
+                "Q": "2016q1"
+              }
+            },
+            {
+              "term": 
+              {
+                "dynamic_fields.CustomForecastCategory": "Commit"
+              }
+            },
+            {
+              "term": 
+              {
+                "K": "CustomType~::~Renewal"
+              }
+            },
+            {
+              "range": 
+              {
+                "dynamic_fields.CloseDate": 
+                  {
+                    "gt": 43330,
+                    "lt": 44000
+                  }
+              }
+            }
+          ]
+        } 
+      }
+    }
+  }
+}
+
